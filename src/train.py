@@ -6,6 +6,10 @@ from pathlib import Path
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
+MLFLOW_TRACKING_URI = os.environ.get("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db")
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
+#updated
+
 PROCESSED_DIR = Path("data/processed")
 FEATURE_COLS = [
     "capacity_fade_rate",
@@ -40,7 +44,7 @@ def evaluate(model, X_test, y_test):
 def train():
     X_train, y_train, X_test, y_test = load_splits()
 
-    mlflow.set_tracking_uri(uri="http://127.0.0.1:5000/")
+    #mlflow.set_tracking_uri(uri="http://127.0.0.1:5000/")
     mlflow.set_experiment("battery-soh-baseline")
 
     with mlflow.start_run(run_name="rf-baseline"):
