@@ -11,7 +11,7 @@ mlflow.db
 
 # Data
 data/raw/
-data/processed/
+#data/processed/
 
 # Jupyter
 notebooks/.ipynb_checkpoints/
