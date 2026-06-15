@@ -20,3 +20,5 @@ notebooks/mlruns/
 # OS
 .DS_Store
 mlartifacts/
+
+src/__pycache__/
