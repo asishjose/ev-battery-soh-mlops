@@ -1,0 +1,71 @@
+name: ML Training Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**.py'
+      - 'data/processed/**.csv'
+  schedule:
+    - cron: '0 2 * * *'    # nightly at 2AM UTC
+  workflow_dispatch:         # manual trigger from GitHub UI
+
+jobs:
+  ml-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install scipy numpy pandas scikit-learn xgboost mlflow fastapi uvicorn pydantic elasticsearch prometheus-fastapi-instrumentator
+
+      - name: Upload processed data
+        uses: actions/upload-artifact@v4
+        with:
+          name: processed-data
+          path: data/processed/
+
+      - name: Validate data
+        run: python src/validate_data.py
+
+      - name: Build dataset
+        run: python src/build_dataset.py
+
+      - name: Validate rebuilt data
+        run: python src/validate_data.py
+
+      - name: Train and evaluate
+        env:
+          MLFLOW_TRACKING_URI: sqlite:///mlflow.db
+        run: |
+          python src/train.py
+
+      - name: Upload MLflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-db
+          path: mlflow.db
+
+      - name: Report metrics
+        env:
+          MLFLOW_TRACKING_URI: sqlite:///mlflow.db
+        run: |
+          python - <<'EOF'
+          import mlflow
+          mlflow.set_tracking_uri("sqlite:///mlflow.db")
+          client = mlflow.MlflowClient()
+          runs = mlflow.search_runs(experiment_names=["battery-soh-baseline"])
+          latest = runs.iloc[0]
+          print(f"RMSE : {latest['metrics.rmse']:.4f}%")
+          print(f"MAE  : {latest['metrics.mae']:.4f}%")
+          print(f"R²   : {latest['metrics.r2']:.4f}")
+          EOF
