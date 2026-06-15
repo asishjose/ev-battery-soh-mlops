@@ -19,3 +19,4 @@ notebooks/mlruns/
 
 # OS
 .DS_Store
+mlartifacts/
